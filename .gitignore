@@ -1,0 +1,5 @@
+# Local agent tooling — never commit.
+.agents/
+
+# Build output (`go build -o cliptrans .`).
+/cliptrans
