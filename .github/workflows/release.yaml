@@ -1,0 +1,62 @@
+name: release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions: {}
+
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - id: bump
+        uses: cocogitto/cocogitto-action@52d0023b4396897f1815648e553db2ab8d782f3a # v4.2.0
+        continue-on-error: true
+        with:
+          command: bump
+          args: --auto
+
+      # Push in a trusted run step with a scoped credential instead of cog
+      # post_bump_hooks, so the third-party action never holds push access.
+      - name: Push bump commit and tag
+        if: ${{ steps.bump.outcome == 'success' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+          git push
+          git push origin "$(git describe --tags --abbrev=0)"
+          git remote set-url origin "https://github.com/${{ github.repository }}.git"
+
+      # Gate on the bump outcome: success means a version was bumped, a
+      # no-op ("No conventional commits …") fails the step but the job goes on.
+      - name: Set up Go
+        if: ${{ steps.bump.outcome == 'success' }}
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: "go.mod"
+          cache: false
+
+      - name: Run GoReleaser
+        if: ${{ steps.bump.outcome == 'success' }}
+        uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
+        with:
+          distribution: goreleaser
+          version: "v2.18.1"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

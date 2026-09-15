@@ -1,0 +1,28 @@
+# https://github.com/actions/labeler
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - README.md
+          - SPEC.md
+          - AGENTS.md
+          - CHANGELOG.md
+
+go:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*.go"
+          - go.mod
+          - go.sum
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file:
+          - .github/**
+          - justfile
+          - Taskfile.yml
+          - .golangci.yaml
+          - .goreleaser.yaml
+          - .testcoverage.yml
+          - cog.toml
+          - committed.toml
+          - prek.toml

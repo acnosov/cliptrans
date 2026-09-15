@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# https://goreleaser.com
+# https://github.com/go-task/task/blob/main/.goreleaser.yml
+# https://github.com/golangci/golangci-lint/blob/main/.goreleaser.yml
+# https://github.com/junegunn/fzf/blob/master/.goreleaser.yml
+version: 2
+
+report_sizes: true
+announce:
+  skip: true
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - "-s -w -X github.com/acnosov/cliptrans/internal/cmd.Version={{.Version}}"
+archives:
+  - formats: tar.gz
+    name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+checksum:
+  name_template: "checksums.txt"
