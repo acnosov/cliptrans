@@ -26,6 +26,38 @@ Behavior source of truth: `SPEC.md` — read it before changing behavior.
 - `go build -o cliptrans .` — binary the hotkey invokes
 - Releases via GoReleaser; don't hand-roll install scripts.
 
+## Pull requests
+
+- Only agents work in this repo; the user always stays on `main`.
+  Never end a session on a feature branch.
+- Never commit directly to `main`. All work goes through a PR branch:
+  1. `git checkout main && git pull --ff-only`, then
+     `git checkout -b <type>/<scope>` (`feat/`, `fix/`, `docs/`, ...).
+  2. Implement, keeping `SPEC.md` / `README.md` / this file in sync
+     per the documentation rules above.
+  3. Verify: `just check` (mandatory) plus
+     `go test -tags=integration ./...` when the translate path or its
+     config is touched.
+  4. Commit split by scope, one commit per scope (conventional commits:
+     lowercase subject, max 72 chars, see `committed.toml`).
+  5. `git push -u origin <branch>` and `gh pr create --base main` with
+     the verification evidence in the description.
+- `--no-verify` is only for commit-ordering artifacts (e.g. an
+  intermediate scoped commit trips lint on a file a later commit
+  replaces); never to hide a real finding. The final tree must always
+  pass `just check` and the hooks.
+- After creating the PR, return the checkout to `main` and delete the
+  local branch: `git checkout main && git branch -D <branch>` (capital
+  `-D`: the branch is unmerged, but deletion is safe once pushed —
+  confirm with `git log origin/<branch>`). The remote branch stays
+  until merge.
+- Addressing review feedback: `git fetch origin && git checkout <branch>`
+  (or `gh pr checkout <N>`), fix, verify, push — the PR updates itself.
+  Then back to `main` and delete the local branch again.
+- After merge: `git checkout main && git pull --ff-only`, delete the
+  remote branch (`git push origin --delete <branch>` unless already
+  auto-deleted), `git fetch --prune`.
+
 ## Clipboard — the one non-obvious thing
 
 Contract and environment: §§3, 5 of SPEC.md. The pitfall beyond that:
