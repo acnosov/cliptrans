@@ -1,0 +1,28 @@
+tag_prefix = "v"
+from_latest_tag = true
+ignore_merge_commits = true
+ignore_fixup_commits = false
+disable_changelog = false
+disable_bump_commit = false
+generate_mono_repository_global_tag = false
+generate_mono_repository_package_tags = false
+branch_whitelist = []
+skip_ci = "[skip ci]"
+skip_untracked = false
+pre_bump_hooks = []
+# No post_bump_hooks: the release workflow pushes the bump commit and tag
+# explicitly in a trusted run step, so the third-party action never holds
+# push credentials.
+post_bump_hooks = []
+pre_package_bump_hooks = []
+post_package_bump_hooks = []
+
+[git_hooks]
+
+[commit_types]
+
+[changelog]
+path = "CHANGELOG.md"
+authors = []
+
+[bump_profiles]

@@ -1,0 +1,254 @@
+version: "3"
+
+tasks:
+  default:
+    desc: List all tasks (equivalent of `just --choose`)
+    cmds:
+      - task --list-all
+
+  run:
+    desc: Run the app
+    cmds:
+      - go run main.go
+
+  build:
+    desc: Build binary to build/cliptrans
+    cmds:
+      - go build -ldflags="-s -w" -trimpath -o build/cliptrans .
+
+  update-and-check:
+    desc: Update then check
+    cmds:
+      - task: update
+      - task: check
+
+  check:
+    desc: Mandatory verification before commit/PR
+    cmds:
+      - task: tidy-diff
+      - task: check-parallel
+
+  check-parallel:
+    desc: Verification tasks that run in parallel (after tidy-diff)
+    deps: [oxfmt, lint, test-coverage, actionlint, goreleaser-check]
+
+  update:
+    desc: Update Go, toolchain and dependencies
+    cmds:
+      - task: get-go
+      - task: get-toolchain
+      - task: get-deps
+      - task: tidy
+      - task: gomajor
+
+  get-go:
+    desc: Update Go version in go.mod
+    cmds:
+      - go get go@latest
+
+  get-toolchain:
+    desc: Update toolchain version in go.mod
+    cmds:
+      - go get toolchain@latest
+
+  get-deps:
+    desc: Update all dependencies
+    cmds:
+      - go get -u -t ./...
+
+  tidy:
+    desc: Tidy go.mod
+    cmds:
+      - go mod tidy -v
+
+  tidy-diff:
+    desc: Fail if go mod tidy would change files
+    cmds:
+      - go mod tidy -diff
+
+  gomajor:
+    desc: List available major dependency upgrades (https://github.com/icholy/gomajor)
+    cmds:
+      - gomajor list
+
+  lint:
+    desc: Run golangci-lint
+    cmds:
+      - golangci-lint run
+
+  lint-fix:
+    desc: Run golangci-lint with autofix
+    cmds:
+      - golangci-lint run --fix
+
+  fmt:
+    desc: Format code with golangci-lint
+    cmds:
+      - golangci-lint fmt
+
+  test:
+    desc: Run tests with race detector and coverage
+    cmds:
+      - go test -race ./... -coverprofile=./cover.out -covermode=atomic -coverpkg=./...
+
+  test-integration:
+    desc: Run integration tests hitting the real API
+    cmds:
+      - go test -tags=integration ./...
+
+  govulncheck:
+    desc: Vulnerability scan (go install golang.org/x/vuln/cmd/govulncheck@latest)
+    cmds:
+      - govulncheck ./...
+
+  test-coverage:
+    desc: Enforce coverage thresholds (runs test first for cover.out)
+    deps: [test]
+    cmds:
+      - go-test-coverage --config=./.testcoverage.yml
+
+  coverage-html:
+    desc: Open coverage report in browser
+    cmds:
+      - go tool cover -html=cover.out
+
+  coverage-func:
+    desc: Show per-function coverage
+    cmds:
+      - go tool cover -func=cover.out
+
+  scc:
+    desc: Count lines of code (https://github.com/boyter/scc)
+    cmds:
+      - scc
+
+  tokei:
+    desc: Count lines of code (https://github.com/XAMPPRocky/tokei)
+    cmds:
+      - tokei
+
+  next:
+    desc: Print next semantic version
+    cmds:
+      - svu next --always
+
+  tag:
+    desc: Tag HEAD with next semantic version
+    vars:
+      VERSION:
+        sh: svu next --always
+    cmds:
+      - git tag {{.VERSION}}
+
+  prek-check-all:
+    desc: Run all prek hooks on all files
+    cmds:
+      - prek run --all-files
+
+  prek-update:
+    desc: Update prek hooks
+    cmds:
+      - prek update
+
+  go-install:
+    desc: Install mdsmith and govulncheck tools
+    cmds:
+      - go install github.com/jeduden/mdsmith/cmd/mdsmith@latest
+      - go install golang.org/x/vuln/cmd/govulncheck@latest
+
+  mdsmith-install:
+    desc: Install mdsmith (go install github.com/jeduden/mdsmith/cmd/mdsmith@latest)
+    cmds:
+      - go install github.com/jeduden/mdsmith/cmd/mdsmith@latest
+
+  mdsmith:
+    desc: Check markdown files (https://github.com/jeduden/mdsmith)
+    cmds:
+      - mdsmith check
+
+  go-size-analyzer-install:
+    desc: Install go-size-analyzer (https://github.com/Zxilly/go-size-analyzer)
+    cmds:
+      - go install github.com/Zxilly/go-size-analyzer/cmd/gsa@latest
+
+  go-size-analyzer:
+    desc: Analyze binary size in TUI (https://github.com/Zxilly/go-size-analyzer)
+    cmds:
+      - task: build
+      - gsa --tui --verbose build/cliptrans
+
+  go-size-analyzer-web:
+    desc: Analyze binary size in browser
+    cmds:
+      - task: build
+      - gsa --web --verbose build/cliptrans
+
+  codegraph-init:
+    desc: Initialize codegraph index
+    cmds:
+      - codegraph init
+
+  actionlint-install:
+    desc: Install actionlint (https://github.com/rhysd/actionlint)
+    cmds:
+      - go install github.com/rhysd/actionlint/cmd/actionlint@latest
+
+  actionlint:
+    desc: Lint GitHub Actions workflows (https://github.com/rhysd/actionlint)
+    cmds:
+      - actionlint
+
+  go-test-coverage-install:
+    desc: Install go-test-coverage (https://github.com/vladopajic/go-test-coverage)
+    cmds:
+      - go install github.com/vladopajic/go-test-coverage/v2@latest
+
+  oxfmt:
+    desc: Format TOML/YAML/JSON files
+    cmds:
+      - oxfmt
+
+  goreleaser-check:
+    desc: Validate goreleaser config
+    cmds:
+      - goreleaser check
+
+  goreleaser-snapshot:
+    desc: Snapshot release (https://github.com/goreleaser/goreleaser)
+    cmds:
+      - goreleaser release --snapshot --clean
+
+  depth-install:
+    desc: Install depth (https://github.com/KyleBanks/depth)
+    cmds:
+      - go install github.com/KyleBanks/depth/cmd/depth@latest
+
+  depth:
+    desc: Show dependency tree (https://github.com/KyleBanks/depth)
+    cmds:
+      - depth .
+
+  wrkflw:
+    desc: Validate and run GitHub Actions locally (https://github.com/bahdotsh/wrkflw)
+    cmds:
+      - wrkflw
+
+  zizmor:
+    desc: Scan GitHub Actions for security issues (https://docs.zizmor.sh/quickstart/)
+    cmds:
+      - zizmor
+
+  roborev-ui:
+    desc: Review with roborev UI (https://github.com/kenn-io/roborev)
+    cmds:
+      - roborev ui
+
+  roborev-tui:
+    desc: Review with roborev TUI (https://github.com/kenn-io/roborev)
+    cmds:
+      - roborev tui
+
+  review:
+    desc: Review workspace changes with open-code-review
+    cmds:
+      - ocr

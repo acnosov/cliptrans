@@ -1,5 +1,12 @@
-# Local agent tooling — never commit.
+_temp/
 .agents/
-
-# Build output (`go build -o cliptrans .`).
+.codegraph/
+build/
+dist/
 /cliptrans
+/todo.md
+.env
+cover.out
+skills-lock.json
+# roborev snapshots
+/.roborev/

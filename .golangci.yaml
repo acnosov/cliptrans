@@ -1,0 +1,110 @@
+# yaml-language-server: $schema=https://json.schemastore.org/golangci-lint.json
+
+version: "2"
+run:
+  timeout: 2m
+  tests: true
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  fix: true
+formatters: #https://golangci-lint.run/docs/formatters/
+  enable:
+    - gofumpt #https://github.com/mvdan/gofumpt
+  settings:
+    gofumpt:
+      extra:
+        group-params: true
+        clothe-returns: true
+        balance-calls: true
+  exclusions: #Use linters.exclusions.paths and formatters.exclusions.paths to exclude directories.
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - build$
+      - dist$
+
+linters:
+  default: all
+  disable:
+    - wsl # deprecated.
+    - wsl_v5 # overly strict whitespace rules that reduce readability
+    - gomodguard # deprecated.
+    - nlreturn # checks for a new line before return and branch statements.
+    - depguard # default rules block legitimate imports (cockroachdb/errors, testify, otel)
+    - exhaustruct # forces all struct fields to be set explicitly, makes code verbose
+    - exhaustruct_v5 # forces all struct fields to be set explicitly, makes code verbose
+    - lll # line length violations, many slightly exceed limits and breaking reduces readability
+    - testpackage
+    - noinlineerr
+    - gochecknoglobals
+    - varnamelen
+    - err113
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+      - genfiles$
+      - vendor$
+      - bin$
+      - build$
+  settings:
+    revive: # https://golangci-lint.run/docs/linters/configuration/#revive
+      # enable-default-rules: true
+      enable-all-rules: true
+      rules:
+        - name: add-constant
+          exclude: ["**/*_test.go"]
+          arguments:
+            - max-lit-count: "3"
+              allow-strs: '""'
+              allow-ints: "0,1,2"
+
+        - name: cognitive-complexity
+          exclude: ["**/*_test.go"]
+
+        - name: line-length-limit
+          disabled: true
+
+        - name: file-length-limit
+          exclude: ["**/*_test.go"]
+          arguments:
+            - max: 200
+        - name: unhandled-error
+          # revive needs a FULL match on the qualified name, a prefix is not enough.
+          arguments:
+            - '^fmt\.Fprint(ln|f)?$'
+            - '^strings\.Builder\.WriteString$'
+    sloglint:
+      context: "scope"
+      msg-style: "lowercased" # Or "capitalized".
+      attr-only: true
+    govet:
+      enable-all: true
+    testifylint:
+      enable-all: true # Default: false
+    errcheck:
+      check-type-assertions: true # Default: false
+      check-blank: true # Default: false
+      exclude-functions:
+        - io/ioutil.ReadFile
+        - io.Copy(*bytes.Buffer)
+        - io.Copy(os.Stdout)
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+    tagliatelle:
+      case:
+        rules:
+          yaml: snake
+    goconst:
+      min-len: 3
+      min-occurrences: 4
